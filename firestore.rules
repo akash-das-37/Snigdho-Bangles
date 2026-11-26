@@ -1,0 +1,43 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Bangle designs catalog: publicly readable, managed via Admin portal
+    match /bangle_designs/{designId} {
+      allow read, write: if true;
+    }
+
+    // Customer bangle orders (shipping & store pickup)
+    match /bangle_orders/{orderId} {
+      allow read, write: if true;
+    }
+
+    // Boutique styling & custom bangle sizing appointments
+    match /boutique_appointments/{appointmentId} {
+      allow read, write: if true;
+    }
+
+    // Staff accounts for counter pickup & dispatch
+    match /bangle_staff_members/{memberId} {
+      allow read, write: if true;
+    }
+
+    // Registered customer profiles
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+
+    match /users_by_email/{emailId} {
+      allow read, write: if true;
+    }
+
+    match /users_by_phone/{phoneId} {
+      allow read, write: if true;
+    }
+
+    // General fallback
+    match /{document=**} {
+      allow read, write: if true;
+    }
+  }
+}
