@@ -33,6 +33,8 @@ import {
   Key,
   Truck,
   Store,
+  Upload,
+  Link2,
 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -58,6 +60,7 @@ import {
   fetchStaffMembers,
   addStaffMember,
   deleteStaffMember,
+  normalizeBangleSizes,
 } from "@/lib/firebase";
 
 const CATEGORIES: BangleCategory[] = [
@@ -80,6 +83,58 @@ const PRESET_BANGLE_IMAGES = [
   { label: "Oxidized Silver", url: "/images/bangles/oxidized-silver.jpg" },
   { label: "Daily Rose-Gold", url: "/images/bangles/daily-wear.jpg" },
 ];
+
+/**
+ * Resizes and compresses a selected bangle photo client-side so it fits safely
+ * inside Firestore documents and works across both localhost and Vercel.
+ */
+async function optimizeUploadedBangleImage(
+  file: File
+): Promise<{ dataUrl: string; sizeKb: number }> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("Please select a valid image file (JPG, PNG, or WEBP).");
+  }
+  if (file.size > 15 * 1024 * 1024) {
+    throw new Error("Image file is too large. Please pick a photo under 15 MB.");
+  }
+
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const el = new window.Image();
+      el.onload = () => resolve(el);
+      el.onerror = () => reject(new Error("Could not read this image format."));
+      el.src = objectUrl;
+    });
+
+    const renderCompressed = (maxDim: number, quality: number): string => {
+      const scale = Math.min(1, maxDim / Math.max(img.width, img.height, 1));
+      const width = Math.max(1, Math.round(img.width * scale));
+      const height = Math.max(1, Math.round(img.height * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        throw new Error("Browser canvas is unavailable to process this image.");
+      }
+      ctx.fillStyle = "#FAF4EA";
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+      return canvas.toDataURL("image/jpeg", quality);
+    };
+
+    let dataUrl = renderCompressed(760, 0.8);
+    if (dataUrl.length > 260_000) {
+      dataUrl = renderCompressed(560, 0.65);
+    }
+
+    const sizeKb = Math.max(1, Math.round((dataUrl.length * 3) / 4 / 1024));
+    return { dataUrl, sizeKb };
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
 
 export default function AdminPage() {
   const router = useRouter();
@@ -105,12 +160,17 @@ export default function AdminPage() {
   const [designDesc, setDesignDesc] = useState("");
   const [designMaterial, setDesignMaterial] = useState("22K Gold-Plated Brass");
   const [designPackCount, setDesignPackCount] = useState("Pair (2 Bangles)");
-  const [designSizes, setDesignSizes] = useState<BangleSize[]>(["2.2", "2.4", "2.6", "2.8"]);
+  const [designSizes, setDesignSizes] = useState<BangleSize[]>(["2.3", "2.4", "2.5", "2.6"]);
   const [designInStock, setDesignInStock] = useState(true);
   const [designBadge, setDesignBadge] = useState("");
   const [designImage, setDesignImage] = useState(PRESET_BANGLE_IMAGES[0].url);
   const [designDispatchTime, setDesignDispatchTime] = useState("Same-Day Dispatch");
   const [isSavingDesign, setIsSavingDesign] = useState(false);
+  const [isUploadingImage, setIsUploadingImage] = useState(false);
+  const [imageUploadError, setImageUploadError] = useState("");
+  const [imageUploadStatus, setImageUploadStatus] = useState("");
+  const [showUrlFallback, setShowUrlFallback] = useState(false);
+  const [isDraggingPhoto, setIsDraggingPhoto] = useState(false);
 
   // Orders state
   const [orders, setOrders] = useState<OrderRecord[]>([]);
@@ -292,11 +352,14 @@ export default function AdminPage() {
     setDesignDesc("");
     setDesignMaterial("22K Gold-Plated Brass");
     setDesignPackCount("Pair (2 Bangles)");
-    setDesignSizes(["2.2", "2.4", "2.6", "2.8"]);
+    setDesignSizes(["2.3", "2.4", "2.5", "2.6"]);
     setDesignInStock(true);
     setDesignBadge("");
     setDesignImage(PRESET_BANGLE_IMAGES[0].url);
     setDesignDispatchTime("Same-Day Dispatch");
+    setImageUploadError("");
+    setImageUploadStatus("");
+    setShowUrlFallback(false);
     setIsDesignModalOpen(true);
   };
 
@@ -308,12 +371,34 @@ export default function AdminPage() {
     setDesignDesc(design.description);
     setDesignMaterial(design.material || "Brass & Glass");
     setDesignPackCount(design.packCount || "Pair (2 Bangles)");
-    setDesignSizes(design.sizes?.length ? design.sizes : ["2.4", "2.6"]);
+    setDesignSizes(normalizeBangleSizes(design.sizes));
     setDesignInStock(design.inStock ?? true);
     setDesignBadge(design.badge || "");
     setDesignImage(design.image);
     setDesignDispatchTime(design.dispatchTime || "Same-Day Dispatch");
+    setImageUploadError("");
+    setImageUploadStatus(
+      design.image?.startsWith("data:image/") ? "Custom uploaded bangle photo" : ""
+    );
+    setShowUrlFallback(false);
     setIsDesignModalOpen(true);
+  };
+
+  const handleBanglePhotoUpload = async (file?: File | null) => {
+    if (!file) return;
+    setImageUploadError("");
+    setIsUploadingImage(true);
+    try {
+      const { dataUrl, sizeKb } = await optimizeUploadedBangleImage(file);
+      setDesignImage(dataUrl);
+      setImageUploadStatus(`Uploaded photo ready (${sizeKb} KB)`);
+    } catch (err: unknown) {
+      setImageUploadError(
+        err instanceof Error ? err.message : "Could not process selected photo."
+      );
+    } finally {
+      setIsUploadingImage(false);
+    }
   };
 
   const toggleDesignSize = (sz: BangleSize) => {
@@ -1392,20 +1477,105 @@ export default function AdminPage() {
               </div>
 
               <div>
-                <label className="block font-bold mb-1">Image Path or URL</label>
-                <input
-                  type="text"
-                  value={designImage}
-                  onChange={(e) => setDesignImage(e.target.value)}
-                  required
-                  className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 mb-2"
-                />
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block font-bold">Bangle Photo *</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowUrlFallback((prev) => !prev)}
+                    className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#4A0E1B] hover:underline cursor-pointer"
+                  >
+                    <Link2 className="w-3 h-3" />
+                    <span>{showUrlFallback ? "Hide URL input" : "Use URL / path instead"}</span>
+                  </button>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-2.5">
+                  <div className="relative w-20 h-20 rounded-2xl overflow-hidden border-2 border-[#C8942D]/50 bg-stone-100 flex-shrink-0">
+                    <Image
+                      src={designImage || PRESET_BANGLE_IMAGES[0].url}
+                      alt="Selected bangle preview"
+                      fill
+                      sizes="80px"
+                      className="object-cover"
+                    />
+                  </div>
+
+                  <label
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsDraggingPhoto(true);
+                    }}
+                    onDragLeave={() => setIsDraggingPhoto(false)}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      setIsDraggingPhoto(false);
+                      void handleBanglePhotoUpload(e.dataTransfer.files?.[0]);
+                    }}
+                    className={`flex-1 flex flex-col items-center justify-center gap-1 px-4 py-3.5 rounded-2xl border-2 border-dashed transition-colors cursor-pointer text-center ${
+                      isDraggingPhoto
+                        ? "border-[#4A0E1B] bg-[#4A0E1B]/10"
+                        : "border-[#C8942D]/60 bg-white hover:bg-amber-50/50"
+                    }`}
+                  >
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        void handleBanglePhotoUpload(e.target.files?.[0]);
+                        e.target.value = "";
+                      }}
+                      className="hidden"
+                    />
+                    <div className="inline-flex items-center gap-1.5 font-bold text-[#4A0E1B]">
+                      {isUploadingImage ? (
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Upload className="w-4 h-4" />
+                      )}
+                      <span>
+                        {isUploadingImage
+                          ? "Optimizing Photo..."
+                          : "Upload Bangle Photo from Device"}
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-stone-500">
+                      {imageUploadStatus || "Click or drag & drop JPG, PNG, or WEBP"}
+                    </span>
+                  </label>
+                </div>
+
+                {imageUploadError && (
+                  <p className="text-[11px] text-red-600 font-semibold mb-2">
+                    {imageUploadError}
+                  </p>
+                )}
+
+                {showUrlFallback && (
+                  <input
+                    type="text"
+                    value={designImage}
+                    onChange={(e) => {
+                      setDesignImage(e.target.value);
+                      setImageUploadStatus("");
+                    }}
+                    placeholder="/images/bangles/bridal-chooda.jpg or https://..."
+                    className="w-full px-3.5 py-2 rounded-xl bg-white border border-stone-300 mb-2.5 text-xs"
+                  />
+                )}
+
+                <span className="block text-[11px] font-semibold text-stone-600 mb-1.5">
+                  Or pick a studio preset photo:
+                </span>
                 <div className="grid grid-cols-4 gap-1.5">
                   {PRESET_BANGLE_IMAGES.map((preset) => (
                     <button
                       key={preset.url}
                       type="button"
-                      onClick={() => setDesignImage(preset.url)}
+                      onClick={() => {
+                        setDesignImage(preset.url);
+                        setImageUploadStatus("");
+                        setImageUploadError("");
+                      }}
                       className={`p-1.5 rounded-lg border text-[10px] font-semibold truncate cursor-pointer ${
                         designImage === preset.url
                           ? "bg-[#4A0E1B] text-[#F6D98B] border-[#4A0E1B]"

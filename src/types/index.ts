@@ -7,7 +7,7 @@ export type BangleCategory =
   | "Glass, Lac & Velvet Sets"
   | "Daily Wear & Oxidized";
 
-export type BangleSize = "2.2" | "2.4" | "2.6" | "2.8" | "Free Size";
+export type BangleSize = "2.3" | "2.4" | "2.5" | "2.6" | "Free Size";
 
 export interface BangleDesign {
   id: string;

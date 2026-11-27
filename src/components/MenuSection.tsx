@@ -138,7 +138,7 @@ export function MenuSection({
                 Interactive Store Design &amp; Price Menu
               </h2>
               <p className="text-xs sm:text-sm text-stone-600 max-w-2xl">
-                Pick your bangle size (`2.2`, `2.4`, `2.6`, `2.8`, or `Free Size`), add designs to
+                Pick your bangle size (2.3, 2.4, 2.5, 2.6, or Free Size), add designs to
                 your bag, and choose cushioned Home Shipping or Dhupguri Store Pickup.
               </p>
               <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-xs font-medium">

@@ -20,10 +20,10 @@ export const STORE_INFO = {
 };
 
 export const BANGLE_SIZES: { size: BangleSize; diameter: string }[] = [
-  { size: "2.2", diameter: "54 mm (XS)" },
-  { size: "2.4", diameter: "57 mm (S)" },
-  { size: "2.6", diameter: "60 mm (M)" },
-  { size: "2.8", diameter: "63.5 mm (L)" },
+  { size: "2.3", diameter: "55.5 mm (S)" },
+  { size: "2.4", diameter: "57 mm (M)" },
+  { size: "2.5", diameter: "58.5 mm (M-L)" },
+  { size: "2.6", diameter: "60 mm (L)" },
   { size: "Free Size", diameter: "Adjustable" },
 ];
 

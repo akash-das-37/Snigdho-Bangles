@@ -107,7 +107,7 @@ export function AboutSection() {
                 <p className="text-xs text-stone-300 mt-1">Curated Bangle Sets</p>
               </div>
               <div>
-                <p className="text-2xl sm:text-3xl font-bold font-serif text-[#F6D98B]">2.2–2.8</p>
+                <p className="text-2xl sm:text-3xl font-bold font-serif text-[#F6D98B]">2.3–2.6</p>
                 <p className="text-xs text-stone-300 mt-1">All Standard Wrist Sizes</p>
               </div>
               <div>

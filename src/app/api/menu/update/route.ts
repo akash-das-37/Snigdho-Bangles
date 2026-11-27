@@ -66,7 +66,13 @@ function updateDesignInFile(fileContent: string, item: BangleDesign): string {
     );
   }
   if (item.image) {
-    block = block.replace(/image:\s*["'][^"']*["']/, `image: ${JSON.stringify(item.image)}`);
+    block = block.replace(/image:\s*["'][^"']*["']/, () => `image: ${JSON.stringify(item.image)}`);
+  }
+  if (Array.isArray(item.sizes) && item.sizes.length > 0) {
+    block = block.replace(
+      /sizes:\s*\[[^\]]*\]/,
+      () => `sizes: ${JSON.stringify(item.sizes)}`
+    );
   }
 
   return fileContent.replace(match[1], block);

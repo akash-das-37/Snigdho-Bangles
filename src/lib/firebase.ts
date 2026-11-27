@@ -15,6 +15,7 @@ import {
 } from "firebase/auth";
 import {
   BangleDesign,
+  BangleSize,
   OrderRecord,
   OrderStatus,
   AppointmentRecord,
@@ -67,6 +68,34 @@ export const LOCAL_ORDERS_KEY = "snigdho_bangles_orders_v1";
 export const LOCAL_RESERVATIONS_KEY = "snigdho_bangles_appointments_v1";
 export const LOCAL_STAFF_KEY = "snigdho_bangles_staff_v1";
 
+const VALID_BANGLE_SIZES: BangleSize[] = ["2.3", "2.4", "2.5", "2.6", "Free Size"];
+
+export function normalizeBangleSize(size?: string): BangleSize {
+  if (size === "2.2") return "2.3";
+  if (size === "2.8") return "2.5";
+  if (size && VALID_BANGLE_SIZES.includes(size as BangleSize)) {
+    return size as BangleSize;
+  }
+  return "2.4";
+}
+
+export function normalizeBangleSizes(sizes?: string[]): BangleSize[] {
+  if (!Array.isArray(sizes) || sizes.length === 0) {
+    return ["2.3", "2.4", "2.5", "2.6"];
+  }
+  const normalized = sizes
+    .map((sz) => normalizeBangleSize(sz))
+    .filter((sz, idx, arr) => arr.indexOf(sz) === idx);
+  return normalized.length > 0 ? normalized : ["2.3", "2.4", "2.5", "2.6"];
+}
+
+function normalizeDesignRecord(item: BangleDesign): BangleDesign {
+  return {
+    ...item,
+    sizes: normalizeBangleSizes(item.sizes),
+  };
+}
+
 /**
  * Synchronously retrieves the latest bangle designs from local cache,
  * falling back to INITIAL_BANGLE_DESIGNS.
@@ -81,7 +110,7 @@ export function getLatestMenuItemsSync(): BangleDesign[] {
           const map = new Map<string, BangleDesign>();
           INITIAL_BANGLE_DESIGNS.forEach((i) => map.set(i.id, i));
           parsed.forEach((i: BangleDesign) => {
-            if (i && i.id) map.set(i.id, i);
+            if (i && i.id) map.set(i.id, normalizeDesignRecord(i));
           });
           return Array.from(map.values());
         }
@@ -125,7 +154,7 @@ export async function fetchMenuItems(): Promise<{
           const map = new Map<string, BangleDesign>();
           INITIAL_BANGLE_DESIGNS.forEach((i) => map.set(i.id, i));
           parsed.forEach((i: BangleDesign) => {
-            if (i && i.id) map.set(i.id, i);
+            if (i && i.id) map.set(i.id, normalizeDesignRecord(i));
           });
           cachedItems = Array.from(map.values());
         }
@@ -142,10 +171,13 @@ export async function fetchMenuItems(): Promise<{
         const firestoreMap = new Map<string, BangleDesign>();
         INITIAL_BANGLE_DESIGNS.forEach((item) => firestoreMap.set(item.id, item));
         snapshot.forEach((docSnapshot) => {
-          firestoreMap.set(docSnapshot.id, {
-            id: docSnapshot.id,
-            ...(docSnapshot.data() as Omit<BangleDesign, "id">),
-          });
+          firestoreMap.set(
+            docSnapshot.id,
+            normalizeDesignRecord({
+              id: docSnapshot.id,
+              ...(docSnapshot.data() as Omit<BangleDesign, "id">),
+            })
+          );
         });
         const items = Array.from(firestoreMap.values());
         if (typeof window !== "undefined") {

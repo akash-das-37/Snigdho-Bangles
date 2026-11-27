@@ -60,7 +60,7 @@ export function OrderOptionsSection() {
               </h3>
 
               <p className="text-stone-600 text-sm leading-relaxed mb-6">
-                Select your favorite bangle sets and wrist sizes (`2.2` – `2.8`), enter your
+                Select your favorite bangle sets and wrist sizes (2.3 – 2.6), enter your
                 delivery address &amp; pincode, and confirm via UPI (full payment or 20% advance
                 for Cash on Delivery).
               </p>
@@ -155,7 +155,7 @@ export function OrderOptionsSection() {
 
         <div className="mt-10 text-center">
           <p className="text-xs text-stone-600">
-            Need help finding your bangle size (`2.2` – `2.8`) or bulk wedding orders? Call or
+            Need help finding your bangle size (2.3 – 2.6) or bulk wedding orders? Call or
             WhatsApp:{" "}
             <a href={STORE_INFO.phoneHref} className="font-bold text-[#4A0E1B] hover:underline">
               {STORE_INFO.phoneDisplay}

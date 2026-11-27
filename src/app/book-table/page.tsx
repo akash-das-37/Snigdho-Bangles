@@ -210,7 +210,7 @@ export default function BookBridalStylingPage() {
 
           <p className="max-w-2xl mx-auto text-xs sm:text-base text-stone-200 leading-relaxed">
             Visit our boutique at Gobindapally (Nearby Jalpaiguri Bus Stand) for personal wrist
-            measurement (`2.2` – `2.8`), saree-matched Chooda &amp; Shakha-Pola sets, and bulk
+            measurement (2.3 – 2.6), saree-matched Chooda &amp; Shakha-Pola sets, and bulk
             wedding gifting orders.
           </p>
 

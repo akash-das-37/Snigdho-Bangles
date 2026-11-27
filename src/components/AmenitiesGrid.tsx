@@ -16,8 +16,8 @@ export function AmenitiesGrid() {
   const features = [
     {
       icon: Ruler,
-      title: "Precision Size Guide (2.2 – 2.8)",
-      desc: "Every design is stocked across Indian sizes 2.2, 2.4, 2.6, 2.8, and adjustable screw-lock kadas.",
+      title: "Precision Size Guide (2.3 – 2.6)",
+      desc: "Every design is stocked across Indian sizes 2.3, 2.4, 2.5, 2.6, and adjustable screw-lock kadas.",
       highlight: "Perfect Wrist Fit",
     },
     {

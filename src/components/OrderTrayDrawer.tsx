@@ -181,7 +181,7 @@ export function OrderTrayDrawer() {
                   Your Bangle Bag is Empty
                 </h4>
                 <p className="text-xs text-stone-500 mt-2 max-w-xs leading-relaxed">
-                  Browse our menu-card bangle catalog and pick your size (`2.2` – `2.8`) to place an
+                  Browse our menu-card bangle catalog and pick your size (2.3 – 2.6) to place an
                   order.
                 </p>
                 <Link

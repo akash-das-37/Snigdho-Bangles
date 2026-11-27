@@ -550,7 +550,7 @@ export default function BangleCheckoutPage() {
                           Selected Bangle Designs ({items.length})
                         </h2>
                         <p className="text-xs text-stone-500 mt-0.5">
-                          Verify wrist size (`2.2` – `2.8`) and quantity before payment
+                          Verify wrist size (2.3 – 2.6) and quantity before payment
                         </p>
                       </div>
                       <button

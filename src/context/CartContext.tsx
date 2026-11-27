@@ -10,7 +10,12 @@ import React, {
   useCallback,
 } from "react";
 import { BangleDesign, BangleSize, CartItem, DeliveryMethod } from "@/types";
-import { getLatestItemPriceSync, fetchMenuItems } from "@/lib/firebase";
+import {
+  getLatestItemPriceSync,
+  fetchMenuItems,
+  normalizeBangleSize,
+  normalizeBangleSizes,
+} from "@/lib/firebase";
 
 interface CartContextType {
   items: CartItem[];
@@ -39,14 +44,22 @@ function syncItemPrices(cartList: CartItem[]): CartItem[] {
   let changed = false;
   const verified = cartList.map((ci) => {
     const livePrice = getLatestItemPriceSync(ci.item.id, ci.item.price);
-    const resolvedSize: BangleSize = ci.selectedSize || ci.item.sizes?.[0] || "2.4";
-    if (ci.item.price !== livePrice || ci.selectedSize !== resolvedSize) {
+    const normalizedItemSizes = normalizeBangleSizes(ci.item.sizes);
+    const resolvedSize: BangleSize = normalizeBangleSize(
+      ci.selectedSize || normalizedItemSizes[0] || "2.4"
+    );
+    if (
+      ci.item.price !== livePrice ||
+      ci.selectedSize !== resolvedSize ||
+      ci.item.sizes?.join(",") !== normalizedItemSizes.join(",")
+    ) {
       changed = true;
       return {
         ...ci,
         selectedSize: resolvedSize,
         item: {
           ...ci.item,
+          sizes: normalizedItemSizes,
           price: livePrice,
         },
       };
